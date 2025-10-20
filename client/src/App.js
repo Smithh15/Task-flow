@@ -16,6 +16,9 @@ export default function App() {
     localStorage.getItem("theme") === "dark"
   );
 
+  // 🟢 Estado del toast visual
+  const [toast, setToast] = useState({ message: "", type: "" });
+
   const api = "http://localhost:4000/api/tasks";
 
   // 🔹 Obtener tareas
@@ -24,14 +27,25 @@ export default function App() {
       const res = await axios.get(api);
       setTasks(res.data);
     } catch (error) {
-      console.error("Error al obtener tareas:", error);
+      showToast("Error al obtener tareas", "error");
     }
+  };
+
+  // 🔹 Mostrar toast elegante
+  const showToast = (message, type = "info") => {
+    setToast({ message, type });
+    setTimeout(() => setToast({ message: "", type: "" }), 3000);
   };
 
   // 🔹 Crear nueva tarea
   const createTask = async (e) => {
     e.preventDefault();
-    if (!form.title.trim()) return;
+    if (!form.title.trim()) return showToast("El título es obligatorio", "error");
+
+    if (form.due_date && form.start_date && form.due_date < form.start_date) {
+      showToast("⚠️ La fecha final no puede ser anterior a la inicial", "error");
+      return;
+    }
 
     try {
       await axios.post(api, form);
@@ -44,8 +58,9 @@ export default function App() {
         due_date: "",
       });
       fetchTasks();
+      showToast("✅ Tarea creada con éxito", "success");
     } catch (error) {
-      console.error("Error al crear tarea:", error);
+      showToast("Error al crear tarea", "error");
     }
   };
 
@@ -54,20 +69,26 @@ export default function App() {
     try {
       await axios.delete(`${api}/${id}`);
       fetchTasks();
+      showToast("🗑️ Tarea eliminada", "success");
     } catch (error) {
-      console.error("Error al eliminar tarea:", error);
+      showToast("Error al eliminar tarea", "error");
     }
   };
 
-  // 🔹 Guardar edición (PUT)
+  // 🔹 Guardar edición
   const saveEdit = async (e) => {
     e.preventDefault();
+    if (editTask.due_date < editTask.start_date) {
+      showToast("⚠️ La fecha final no puede ser anterior a la inicial", "error");
+      return;
+    }
     try {
       await axios.put(`${api}/${editTask.id}`, editTask);
       setEditTask(null);
       fetchTasks();
+      showToast("✏️ Tarea actualizada correctamente", "success");
     } catch (error) {
-      console.error("Error al editar tarea:", error);
+      showToast("Error al editar tarea", "error");
     }
   };
 
@@ -104,7 +125,22 @@ export default function App() {
           </button>
         </div>
 
-        {/* Formulario de creación */}
+        {/* TOAST flotante */}
+        {toast.message && (
+          <div
+            className={`fixed top-6 right-6 z-50 px-5 py-3 rounded-lg shadow-lg text-sm font-medium fade-in transition-all duration-500 ${
+              toast.type === "success"
+                ? "bg-green-600 text-white"
+                : toast.type === "error"
+                ? "bg-red-600 text-white"
+                : "bg-blue-600 text-white"
+            }`}
+          >
+            {toast.message}
+          </div>
+        )}
+
+        {/* Formulario */}
         <div
           className={`rounded-xl shadow-2xl p-8 mb-10 ${
             darkMode ? "bg-gray-800" : "bg-white"
@@ -129,61 +165,99 @@ export default function App() {
 
           <form onSubmit={createTask} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <input
-                type="text"
-                placeholder="Título"
-                className="w-full px-4 py-3 border rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100"
-                value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
-                required
-              />
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  Título
+                </label>
+                <input
+                  type="text"
+                  placeholder="Título de la tarea"
+                  className="w-full px-4 py-3 border rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100"
+                  value={form.title}
+                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                  required
+                />
+              </div>
 
-              <select
-                className="w-full px-4 py-3 border rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100"
-                value={form.priority}
-                onChange={(e) =>
-                  setForm({ ...form, priority: e.target.value })
-                }
-              >
-                <option value="baja">Baja</option>
-                <option value="media">Media</option>
-                <option value="alta">Alta</option>
-              </select>
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  Prioridad
+                </label>
+                <select
+                  className="w-full px-4 py-3 border rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100"
+                  value={form.priority}
+                  onChange={(e) =>
+                    setForm({ ...form, priority: e.target.value })
+                  }
+                >
+                  <option value="baja">Baja</option>
+                  <option value="media">Media</option>
+                  <option value="alta">Alta</option>
+                </select>
+              </div>
 
-              <select
-                className="w-full px-4 py-3 border rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100"
-                value={form.status}
-                onChange={(e) => setForm({ ...form, status: e.target.value })}
-              >
-                <option value="pendiente">Pendiente</option>
-                <option value="en_progreso">En Progreso</option>
-                <option value="completada">Completada</option>
-              </select>
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  Estado
+                </label>
+                <select
+                  className="w-full px-4 py-3 border rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100"
+                  value={form.status}
+                  onChange={(e) => setForm({ ...form, status: e.target.value })}
+                >
+                  <option value="pendiente">Pendiente</option>
+                  <option value="en_progreso">En progreso</option>
+                  <option value="completada">Completada</option>
+                </select>
+              </div>
 
-              <input
-                type="datetime-local"
-                className="w-full px-4 py-3 border rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100"
-                value={form.start_date}
-                onChange={(e) =>
-                  setForm({ ...form, start_date: e.target.value })
-                }
-              />
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  Fecha de inicio
+                </label>
+                <input
+                  type="datetime-local"
+                  className="w-full px-4 py-3 border rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100"
+                  value={form.start_date}
+                  onChange={(e) =>
+                    setForm({ ...form, start_date: e.target.value })
+                  }
+                  required
+                />
+              </div>
 
-              <input
-                type="datetime-local"
-                className="w-full px-4 py-3 border rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100"
-                value={form.due_date}
-                onChange={(e) => setForm({ ...form, due_date: e.target.value })}
-              />
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  Fecha de finalización
+                </label>
+                <input
+                  type="datetime-local"
+                  className="w-full px-4 py-3 border rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100"
+                  value={form.due_date}
+                  min={form.start_date}
+                  onChange={(e) =>
+                    setForm({ ...form, due_date: e.target.value })
+                  }
+                  required
+                />
+              </div>
             </div>
 
-            <textarea
-              placeholder="Descripción..."
-              className="w-full px-4 py-3 border rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100"
-              rows="3"
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-            />
+            <div>
+              <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                Descripción
+              </label>
+              <textarea
+                placeholder="Descripción de la tarea..."
+                className="w-full px-4 py-3 border rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100"
+                rows="3"
+                value={form.description}
+                onChange={(e) =>
+                  setForm({ ...form, description: e.target.value })
+                }
+                required
+              />
+            </div>
 
             <button
               type="submit"
