@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import db from "../config/db.js";
 
+
 const JWT_SECRET = "supersecreto123"; // ⚠️ cámbialo luego y guárdalo en .env
 
 // ✅ Registro de usuario
