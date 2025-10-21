@@ -1,19 +1,26 @@
 import mysql from "mysql2/promise";
+import dotenv from "dotenv";
+dotenv.config();
 
-const db = mysql.createPool({
+const dbConfig = {
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  port: process.env.DB_PORT || 3306,
-});
+  port: process.env.DB_PORT,
+  ssl: {
+    rejectUnauthorized: false, // ✅ IMPORTANTE para Railway
+  },
+};
+
+// 🔹 Creamos la conexión al iniciar el servidor
+let db;
 
 try {
-  const conn = await db.getConnection();
-  console.log("✅ Conectado correctamente a Railway MySQL");
-  conn.release();
-} catch (err) {
-  console.error("❌ Error al conectar a MySQL:", err.message);
+  db = await mysql.createConnection(dbConfig);
+  console.log("✅ Conectado correctamente a la base de datos Railway");
+} catch (error) {
+  console.error("❌ Error al conectar a MySQL:", error.message);
 }
 
 export default db;
