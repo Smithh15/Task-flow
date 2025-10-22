@@ -1,21 +1,7 @@
 import React, { useState, useEffect } from "react";
 
-import axios from "axios";
-
-const api = axios.create({
-  baseURL: "http://localhost:4000/api",
-});
-
-// ✅ interceptor para agregar el token automáticamente
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token"); // donde guardaste el JWT al loguearte
-  
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
-
-
 export default function TaskManager() {
+  // Estados
   const [tasks, setTasks] = useState([]);
   const [form, setForm] = useState({
     title: "",
@@ -29,78 +15,85 @@ export default function TaskManager() {
   const [darkMode, setDarkMode] = useState(
     localStorage.getItem("theme") === "dark"
   );
-
-  // 🟢 Estado del toast visual
   const [toast, setToast] = useState({ message: "", type: "" });
 
-  
+  // 🔒 Validar token
   useEffect(() => {
-  const token = localStorage.getItem("token");
-  if (!token) {
-    window.location.href = "/login";
-  }
-}, []);
-
+    const token = localStorage.getItem("token");
+    if (!token) {
+      window.location.href = "/login";
+    }
+  }, []);
 
   // 🔹 Obtener tareas
- const fetchTasks = async () => {
-  try {
-    const res = await api.get("/tasks");
-    setTasks(res.data);
-  } catch (error) {
-    showToast("Error al obtener tareas", "error");
-  }
-};
+  const fetchTasks = async () => {
+    try {
+      const res = await api.get("/tasks");
+      setTasks(res.data);
+    } catch (error) {
+      showToast("Error al obtener tareas", "error");
+    }
+  };
 
-  // 🔹 Mostrar toast elegante
+  // 🔹 Mostrar toast
   const showToast = (message, type = "info") => {
     setToast({ message, type });
     setTimeout(() => setToast({ message: "", type: "" }), 3000);
   };
-//crear tarea
- const createTask = async (e) => {
-  e.preventDefault();
-  try {
-    await api.post("/tasks", form);
-    fetchTasks();
-    showToast("✅ Tarea creada con éxito", "success");
-  } catch (error) {
-    console.error(error);
-    showToast("Error al crear tarea", "error");
-  }
-};
 
- // 🔹 Guardar edición
-const saveEdit = async (e) => {
-  e.preventDefault();
-  try {
-    await api.put(`/tasks/${editTask.id}`, editTask);
-    setEditTask(null);
-    fetchTasks();
-    showToast("✏️ Tarea actualizada correctamente", "success");
-  } catch (error) {
-    showToast("Error al editar tarea", "error");
-  }
-};
+  // 🔹 Crear tarea
+  const createTask = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await api.post("/tasks", form);
+      console.log("✅ Tarea creada:", res.data);
+      showToast("Tarea creada correctamente", "success");
+      setForm({
+        title: "",
+        description: "",
+        status: "pendiente",
+        priority: "media",
+        start_date: "",
+        due_date: "",
+      });
+      fetchTasks();
+    } catch (err) {
+      console.error("❌ Error al crear tarea:", err.response?.data || err.message);
+      showToast("Error al crear tarea", "error");
+    }
+  };
 
-// 🔹 Eliminar tarea
-const deleteTask = async (id) => {
-  try {
-    await api.delete(`/tasks/${id}`);
-    fetchTasks();
-    showToast("🗑️ Tarea eliminada", "success");
-  } catch (error) {
-    showToast("Error al eliminar tarea", "error");
-  }
-};
-//cerrar sesion
-const logout = () => {
-  localStorage.removeItem("token");
-  window.location.href = "/login"; // redirige al login
-};
+  // 🔹 Guardar edición
+  const saveEdit = async (e) => {
+    e.preventDefault();
+    try {
+      await api.put(`/tasks/${editTask.id}`, editTask);
+      setEditTask(null);
+      fetchTasks();
+      showToast("✏️ Tarea actualizada correctamente", "success");
+    } catch (error) {
+      showToast("Error al editar tarea", "error");
+    }
+  };
 
+  // 🔹 Eliminar tarea
+  const deleteTask = async (id) => {
+    try {
+      await api.delete(`/tasks/${id}`);
+      fetchTasks();
+      showToast("🗑️ Tarea eliminada", "success");
+    } catch (error) {
+      showToast("Error al eliminar tarea", "error");
+    }
+  };
 
-  // 🔹 Modo oscuro
+  // 🔹 Cerrar sesión
+  const logout = () => {
+    localStorage.removeItem("token");
+    window.location.href = "/login";
+  };
+
+  // 🌙 Cambiar modo oscuro
   const toggleDarkMode = () => {
     const newMode = !darkMode;
     setDarkMode(newMode);
@@ -125,21 +118,23 @@ const logout = () => {
         {/* Header */}
         <div className="flex justify-between items-center mb-10">
           <h1 className="text-5xl font-bold animate-pulse">📝 Gestor de Tareas</h1>
-          <button
-            onClick={toggleDarkMode}
-            className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-yellow-300 px-4 py-2 rounded-lg shadow hover:scale-105 transition transform"
-          >
-            {darkMode ? "☀️ Modo Claro" : "🌙 Modo Oscuro"}
-          </button>
+          <div className="flex gap-3">
             <button
-            onClick={logout}
-            className="bg-red-500 text-white px-4 py-2 rounded-lg shadow hover:bg-red-600 transition"
+              onClick={toggleDarkMode}
+              className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-yellow-300 px-4 py-2 rounded-lg shadow hover:scale-105 transition transform"
             >
-           🚪 Cerrar sesión
-</button>
+              {darkMode ? "☀️ Modo Claro" : "🌙 Modo Oscuro"}
+            </button>
+            <button
+              onClick={logout}
+              className="bg-red-500 text-white px-4 py-2 rounded-lg shadow hover:bg-red-600 transition"
+            >
+              🚪 Cerrar sesión
+            </button>
+          </div>
         </div>
 
-        {/* TOAST flotante */}
+        {/* Toast */}
         {toast.message && (
           <div
             className={`fixed top-6 right-6 z-50 px-5 py-3 rounded-lg shadow-lg text-sm font-medium fade-in transition-all duration-500 ${
@@ -200,9 +195,7 @@ const logout = () => {
                 <select
                   className="w-full px-4 py-3 border rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100"
                   value={form.priority}
-                  onChange={(e) =>
-                    setForm({ ...form, priority: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, priority: e.target.value })}
                 >
                   <option value="baja">Baja</option>
                   <option value="media">Media</option>
@@ -233,9 +226,7 @@ const logout = () => {
                   type="datetime-local"
                   className="w-full px-4 py-3 border rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100"
                   value={form.start_date}
-                  onChange={(e) =>
-                    setForm({ ...form, start_date: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, start_date: e.target.value })}
                   required
                 />
               </div>
@@ -249,9 +240,7 @@ const logout = () => {
                   className="w-full px-4 py-3 border rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100"
                   value={form.due_date}
                   min={form.start_date}
-                  onChange={(e) =>
-                    setForm({ ...form, due_date: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, due_date: e.target.value })}
                   required
                 />
               </div>
@@ -266,9 +255,7 @@ const logout = () => {
                 className="w-full px-4 py-3 border rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100"
                 rows="3"
                 value={form.description}
-                onChange={(e) =>
-                  setForm({ ...form, description: e.target.value })
-                }
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
                 required
               />
             </div>
@@ -324,8 +311,7 @@ const logout = () => {
                 <h3 className="text-xl font-semibold mb-1">{task.title}</h3>
                 <p className="text-sm mb-2">{task.description}</p>
                 <p className="text-xs text-gray-500 mb-2">
-                  {task.start_date?.slice(0, 10)} →{" "}
-                  {task.due_date?.slice(0, 10)}
+                  {task.start_date?.slice(0, 10)} → {task.due_date?.slice(0, 10)}
                 </p>
                 <div className="flex justify-between items-center mt-3">
                   <span
