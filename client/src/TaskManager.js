@@ -1,14 +1,10 @@
 import React, { useState, useEffect } from "react";
+import api from "../utils/api";
 
-import axios from "axios";
-
-const api = axios.create({
-  baseURL: "http://localhost:4000/api",
-});
 
 // ✅ interceptor para agregar el token automáticamente
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token"); // donde guardaste el JWT al loguearte
+  const token = localStorage.getItem("token"); // donde se guarda el JWT al loguearse
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
@@ -57,17 +53,15 @@ export default function TaskManager() {
     setTimeout(() => setToast({ message: "", type: "" }), 3000);
   };
 //crear tarea
- const createTask = async (e) => {
-  e.preventDefault();
-  try {
-    await api.post("/tasks", form);
-    fetchTasks();
-    showToast("✅ Tarea creada con éxito", "success");
-  } catch (error) {
-    console.error(error);
-    showToast("Error al crear tarea", "error");
-  }
-};
+const createTask = async () => {
+    try {
+      const res = await api.post("/tasks", form);
+      console.log("✅ Tarea creada:", res.data);
+    } catch (err) {
+      console.error("❌ Error al crear tarea:", err.response?.data || err.message);
+    }
+  };
+}
 
  // 🔹 Guardar edición
 const saveEdit = async (e) => {
@@ -407,4 +401,4 @@ const logout = () => {
       </div>
     </div>
   );
-}
+
