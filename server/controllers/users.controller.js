@@ -2,63 +2,90 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import db from "../config/db.js";
 
+// ⚙️ Clave JWT (debería venir del .env en producción)
+const JWT_SECRET = process.env.JWT_SECRET || "miclavesupersegura";
 
-const JWT_SECRET = "miclavesupersegura"; // ⚠️ cámbialo luego y guárdalo en .env
-
-// ✅ Registro de usuario
+// ======================================================
+// ✅ REGISTRO DE USUARIO
+// ======================================================
 export const registerUser = async (req, res) => {
   try {
+    console.log("📩 Datos recibidos en /register:", req.body);
+
     const { name, email, password } = req.body;
 
-    if (!name || !email || !password)
-      return res.status(400).json({ message: "Faltan campos" });
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "Faltan campos obligatorios" });
+    }
 
-    // Verificar si ya existe
+    // 🔍 Verificar si el correo ya está registrado
     const [existing] = await db.query("SELECT * FROM users WHERE email = ?", [email]);
-    if (existing.length > 0)
+    if (existing.length > 0) {
       return res.status(400).json({ message: "El usuario ya existe" });
+    }
 
-    const hashed = await bcrypt.hash(password, 10);
-    await db.query("INSERT INTO users (name, email, password) VALUES (?, ?, ?)", [
-      name,
-      email,
-      hashed,
-    ]);
+    // 🔐 Encriptar contraseña
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    res.status(201).json({ message: "Usuario registrado con éxito" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Error en el servidor" });
+    // 🧩 Insertar nuevo usuario
+    await db.query(
+      "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
+      [name, email, hashedPassword]
+    );
+
+    // 🔑 Generar token JWT
+    const token = jwt.sign({ email }, JWT_SECRET, { expiresIn: "1d" });
+
+    // ✅ Respuesta exitosa
+    return res.status(201).json({
+      message: "Usuario registrado con éxito",
+      user: { name, email },
+      token,
+    });
+  } catch (error) {
+    console.error("❌ Error en registerUser:", error);
+    return res.status(500).json({
+      message: "Error en el servidor al registrar usuario",
+      error: error.message,
+    });
   }
 };
 
-
+// ======================================================
+// ✅ LOGIN DE USUARIO
+// ======================================================
 export const loginUser = async (req, res) => {
   try {
+    console.log("🔐 Intentando iniciar sesión:", req.body);
+
     const { email, password } = req.body;
 
-    if (!email || !password)
+    if (!email || !password) {
       return res.status(400).json({ message: "Faltan campos" });
+    }
 
-    // 🔍 Buscar usuario
-    const [rows] = await db.query("SELECT * FROM users WHERE email = ?", [
-      email,
-    ]);
+    // Buscar usuario
+    const [rows] = await db.query("SELECT * FROM users WHERE email = ?", [email]);
 
-    // ⚠️ Si no existe, error
-    if (rows.length === 0)
+    if (rows.length === 0) {
       return res.status(404).json({ message: "Usuario no encontrado" });
+    }
 
     const user = rows[0];
 
-    // 🔐 Verificar contraseña
+    // Comparar contraseña
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch)
+    if (!isMatch) {
       return res.status(401).json({ message: "Contraseña incorrecta" });
+    }
 
-    // ✅ Generar token con ID del usuario
-    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "1d" });
-    res.json({
+    // Generar token
+    const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, {
+      expiresIn: "1d",
+    });
+
+    // ✅ Respuesta
+    return res.json({
       message: "Inicio de sesión exitoso",
       token,
       user: {
@@ -68,32 +95,57 @@ export const loginUser = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error en loginUser:", error);
-    res.status(500).json({ message: "Error al iniciar sesión" });
+    console.error("❌ Error en loginUser:", error);
+    return res.status(500).json({
+      message: "Error en el servidor al iniciar sesión",
+      error: error.message,
+    });
   }
 };
 
-
-// ✅ Perfil de usuario (opcional)
+// ======================================================
+// ✅ PERFIL DE USUARIO (opcional / protegido)
+// ======================================================
 export const getProfile = async (req, res) => {
-  res.json({ message: "Perfil de usuario (en construcción)" });
+  try {
+    console.log("👤 Obteniendo perfil para usuario:", req.user);
+
+    if (!req.user) {
+      return res.status(401).json({ message: "No autorizado" });
+    }
+
+    return res.json({
+      message: "Perfil de usuario",
+      user: req.user,
+    });
+  } catch (error) {
+    console.error("❌ Error en getProfile:", error);
+    return res.status(500).json({ message: "Error al obtener perfil" });
+  }
 };
 
-
+// ======================================================
+// ✅ RECUPERACIÓN DE CONTRASEÑA (simulada)
+// ======================================================
 export const recoverPassword = async (req, res) => {
   try {
     const { email } = req.body;
 
     const [rows] = await db.query("SELECT * FROM users WHERE email = ?", [email]);
-    if (rows.length === 0)
+    if (rows.length === 0) {
       return res.status(404).json({ message: "Correo no encontrado" });
+    }
 
-    // Aquí normalmente enviarías un correo con un enlace único
-    console.log(`🔐 Enlace de recuperación enviado a ${email}`);
-
-    res.json({ message: "Correo de recuperación enviado (simulado)" });
+    // Simulación de envío de correo
+    console.log(`📨 Correo de recuperación enviado a ${email}`);
+    return res.json({
+      message: "Correo de recuperación enviado (simulado)",
+    });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error al recuperar contraseña" });
+    console.error("❌ Error en recoverPassword:", error);
+    return res.status(500).json({
+      message: "Error al procesar la recuperación",
+      error: error.message,
+    });
   }
 };

@@ -1,7 +1,11 @@
 import express from "express";
-import { registerUser, loginUser, getProfile } from "../controllers/users.controller.js";
+import {
+  registerUser,
+  loginUser,
+  getProfile,
+  recoverPassword,
+} from "../controllers/users.controller.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
-import { recoverPassword } from "../controllers/users.controller.js";
 
 const router = express.Router();
 
