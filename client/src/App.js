@@ -4,7 +4,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Recover from "./pages/Recover";
 import TaskManager from "./TaskManager";
-import ProtectedRoute from "./utils/ProtectedRoute";
+import ProtectedRoute from "../utils/ProtectedRoute";
 
 export default function App() {
   return (

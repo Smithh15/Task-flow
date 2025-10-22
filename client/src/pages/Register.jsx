@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import api from "../utils/api";
+import api from "../../utils/api";
 import Toast from "../components/Toast";
 import { useNavigate } from "react-router-dom";
 
