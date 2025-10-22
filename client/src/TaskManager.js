@@ -61,7 +61,7 @@ const createTask = async () => {
       console.error("❌ Error al crear tarea:", err.response?.data || err.message);
     }
   };
-}
+
 
  // 🔹 Guardar edición
 const saveEdit = async (e) => {
@@ -401,4 +401,4 @@ const logout = () => {
       </div>
     </div>
   );
-
+}
