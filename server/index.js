@@ -10,8 +10,14 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+console.log("🧩 Cargando rutas...");
+
 app.use("/api/users", userRoutes);
 app.use("/api/tasks", taskRoutes);
+
+app.get("/", (req, res) => {
+  res.send("🚀 API funcionando correctamente");
+});
 
 const PORT = process.env.PORT || 4000;
 
