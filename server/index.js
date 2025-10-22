@@ -10,21 +10,14 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-console.log("🧩 Cargando rutas...");
-
 app.use("/api/users", userRoutes);
 app.use("/api/tasks", taskRoutes);
-console.log("✅ Rutas cargadas: /api/users y /api/tasks");
+
 app.get("/", (req, res) => {
   res.send("🚀 API funcionando correctamente");
 });
 
 const PORT = process.env.PORT || 4000;
-
-app.use("/api", (req, res, next) => {
-  console.log("➡️ API request recibida:", req.method, req.url);
-  next();
-});
 
 app.listen(PORT, () => {
   console.log(`✅ Servidor corriendo en el puerto ${PORT}`);
