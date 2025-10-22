@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import api from "../utils/api";
 
-
 export default function TaskManager() {
   const [tasks, setTasks] = useState([]);
   const [form, setForm] = useState({
@@ -44,18 +43,25 @@ export default function TaskManager() {
     setToast({ message, type });
     setTimeout(() => setToast({ message: "", type: "" }), 3000);
   };
-const createTask = async (e) => {
+
+    const createTask = async (e) => {
   e.preventDefault();
   try {
-    const token = localStorage.getItem("token");
-    const res = await api.post("/tasks", form, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const res = await api.post("/tasks", form);
     console.log("✅ Tarea creada:", res.data);
+    showToast("Tarea creada correctamente", "success");
+    setForm({
+      title: "",
+      description: "",
+      status: "pendiente",
+      priority: "media",
+      start_date: "",
+      due_date: "",
+    });
+    fetchTasks();
   } catch (err) {
     console.error("❌ Error al crear tarea:", err.response?.data || err.message);
+    showToast("Error al crear tarea", "error");
   }
 };
 
