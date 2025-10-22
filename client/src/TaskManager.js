@@ -1,18 +1,5 @@
 import React, { useState, useEffect } from "react";
-
-import axios from "axios";
-
-const api = axios.create({
-  baseURL: "http://localhost:4000/api",
-});
-
-// ✅ interceptor para agregar el token automáticamente
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token"); // donde guardaste el JWT al loguearte
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
-
+import api from "../utils/api"; // asegúrate que la ruta sea correcta
 
 export default function TaskManager() {
   const [tasks, setTasks] = useState([]);
@@ -29,77 +16,84 @@ export default function TaskManager() {
     localStorage.getItem("theme") === "dark"
   );
 
-  // 🟢 Estado del toast visual
   const [toast, setToast] = useState({ message: "", type: "" });
 
-  
+  // 🔒 Si no hay token, redirigir al login
   useEffect(() => {
-  const token = localStorage.getItem("token");
-  if (!token) {
-    window.location.href = "/login";
-  }
-}, []);
+    const token = localStorage.getItem("token");
+    if (!token) {
+      window.location.href = "/login";
+    }
+  }, []);
 
+  // 🔹 Obtener tareas del backend
+  const fetchTasks = async () => {
+    try {
+      const res = await api.get("/tasks");
+      setTasks(res.data);
+    } catch (error) {
+      showToast("Error al obtener tareas", "error");
+    }
+  };
 
-  // 🔹 Obtener tareas
- const fetchTasks = async () => {
-  try {
-    const res = await api.get("/tasks");
-    setTasks(res.data);
-  } catch (error) {
-    showToast("Error al obtener tareas", "error");
-  }
-};
-
-  // 🔹 Mostrar toast elegante
+  // 🔹 Mostrar toast visual
   const showToast = (message, type = "info") => {
     setToast({ message, type });
     setTimeout(() => setToast({ message: "", type: "" }), 3000);
   };
-//crear tarea
- const createTask = async (e) => {
-  e.preventDefault();
-  try {
-    await api.post("/tasks", form);
-    fetchTasks();
-    showToast("✅ Tarea creada con éxito", "success");
-  } catch (error) {
-    console.error(error);
-    showToast("Error al crear tarea", "error");
-  }
-};
 
- // 🔹 Guardar edición
-const saveEdit = async (e) => {
-  e.preventDefault();
-  try {
-    await api.put(`/tasks/${editTask.id}`, editTask);
-    setEditTask(null);
-    fetchTasks();
-    showToast("✏️ Tarea actualizada correctamente", "success");
-  } catch (error) {
-    showToast("Error al editar tarea", "error");
-  }
-};
+  // 🔹 Crear tarea
+  const createTask = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await api.post("/tasks", form);
+      showToast("✅ Tarea creada correctamente", "success");
+      setForm({
+        title: "",
+        description: "",
+        status: "pendiente",
+        priority: "media",
+        start_date: "",
+        due_date: "",
+      });
+      fetchTasks();
+    } catch (err) {
+      console.error("❌ Error al crear tarea:", err.response?.data || err.message);
+      showToast("Error al crear tarea", "error");
+    }
+  };
 
-// 🔹 Eliminar tarea
-const deleteTask = async (id) => {
-  try {
-    await api.delete(`/tasks/${id}`);
-    fetchTasks();
-    showToast("🗑️ Tarea eliminada", "success");
-  } catch (error) {
-    showToast("Error al eliminar tarea", "error");
-  }
-};
-//cerrar sesion
-const logout = () => {
-  localStorage.removeItem("token");
-  window.location.href = "/login"; // redirige al login
-};
+  // 🔹 Guardar edición
+  const saveEdit = async (e) => {
+    e.preventDefault();
+    try {
+      await api.put(`/tasks/${editTask.id}`, editTask);
+      setEditTask(null);
+      fetchTasks();
+      showToast("✏️ Tarea actualizada correctamente", "success");
+    } catch {
+      showToast("Error al editar tarea", "error");
+    }
+  };
 
+  // 🔹 Eliminar tarea
+  const deleteTask = async (id) => {
+    try {
+      await api.delete(`/tasks/${id}`);
+      fetchTasks();
+      showToast("🗑️ Tarea eliminada", "success");
+    } catch {
+      showToast("Error al eliminar tarea", "error");
+    }
+  };
 
-  // 🔹 Modo oscuro
+  // 🔹 Cerrar sesión
+  const logout = () => {
+    localStorage.removeItem("token");
+    window.location.href = "/login";
+  };
+
+  // 🌙 Cambiar modo oscuro
   const toggleDarkMode = () => {
     const newMode = !darkMode;
     setDarkMode(newMode);
@@ -124,21 +118,23 @@ const logout = () => {
         {/* Header */}
         <div className="flex justify-between items-center mb-10">
           <h1 className="text-5xl font-bold animate-pulse">📝 Gestor de Tareas</h1>
-          <button
-            onClick={toggleDarkMode}
-            className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-yellow-300 px-4 py-2 rounded-lg shadow hover:scale-105 transition transform"
-          >
-            {darkMode ? "☀️ Modo Claro" : "🌙 Modo Oscuro"}
-          </button>
+          <div className="flex gap-3">
             <button
-            onClick={logout}
-            className="bg-red-500 text-white px-4 py-2 rounded-lg shadow hover:bg-red-600 transition"
+              onClick={toggleDarkMode}
+              className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-yellow-300 px-4 py-2 rounded-lg shadow hover:scale-105 transition transform"
             >
-           🚪 Cerrar sesión
-</button>
+              {darkMode ? "☀️ Modo Claro" : "🌙 Modo Oscuro"}
+            </button>
+            <button
+              onClick={logout}
+              className="bg-red-500 text-white px-4 py-2 rounded-lg shadow hover:bg-red-600 transition"
+            >
+              🚪 Cerrar sesión
+            </button>
+          </div>
         </div>
 
-        {/* TOAST flotante */}
+        {/* TOAST */}
         {toast.message && (
           <div
             className={`fixed top-6 right-6 z-50 px-5 py-3 rounded-lg shadow-lg text-sm font-medium fade-in transition-all duration-500 ${
@@ -153,7 +149,7 @@ const logout = () => {
           </div>
         )}
 
-        {/* Formulario */}
+        {/* Formulario de tareas */}
         <div
           className={`rounded-xl shadow-2xl p-8 mb-10 ${
             darkMode ? "bg-gray-800" : "bg-white"
