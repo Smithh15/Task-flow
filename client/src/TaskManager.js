@@ -47,7 +47,12 @@ export default function TaskManager() {
     const createTask = async (e) => {
   e.preventDefault();
   try {
-    const res = await api.post("/tasks", form);
+    const token = localStorage.getItem("token");
+
+    const res = await api.post("/tasks", form, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
     console.log("✅ Tarea creada:", res.data);
     showToast("Tarea creada correctamente", "success");
     setForm({
@@ -60,8 +65,11 @@ export default function TaskManager() {
     });
     fetchTasks();
   } catch (err) {
-    console.error("❌ Error al crear tarea:", err.response?.data || err.message);
-    showToast("Error al crear tarea", "error");
+    console.error("❌ Error al crear tarea:", err.response || err);
+    showToast(
+      err.response?.data?.message || "Error al crear tarea (ver consola)",
+      "error"
+    );
   }
 };
 
