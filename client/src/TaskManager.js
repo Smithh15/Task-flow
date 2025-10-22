@@ -1,18 +1,5 @@
 import React, { useState, useEffect } from "react";
 import api from "../utils/api";
-import axios from "axios";
-
-const api = axios.create({
-  baseURL: "https://task-flow-2-62wk.onrender.com/api",
-
-});
-
-// ✅ interceptor para agregar el token automáticamente
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token"); // donde guardaste el JWT al loguearte
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
 
 
 export default function TaskManager() {
@@ -57,16 +44,18 @@ export default function TaskManager() {
     setToast({ message, type });
     setTimeout(() => setToast({ message: "", type: "" }), 3000);
   };
-//crear tarea
- const createTask = async (e) => {
+const createTask = async (e) => {
   e.preventDefault();
   try {
-    await api.post("/tasks", form);
-    fetchTasks();
-    showToast("✅ Tarea creada con éxito", "success");
-  } catch (error) {
-    console.error(error);
-    showToast("Error al crear tarea", "error");
+    const token = localStorage.getItem("token");
+    const res = await api.post("/tasks", form, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    console.log("✅ Tarea creada:", res.data);
+  } catch (err) {
+    console.error("❌ Error al crear tarea:", err.response?.data || err.message);
   }
 };
 
