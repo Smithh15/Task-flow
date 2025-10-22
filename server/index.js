@@ -21,6 +21,11 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 4000;
 
+app.use("/api", (req, res, next) => {
+  console.log("➡️ API request recibida:", req.method, req.url);
+  next();
+});
+
 app.listen(PORT, () => {
   console.log(`✅ Servidor corriendo en el puerto ${PORT}`);
 });
