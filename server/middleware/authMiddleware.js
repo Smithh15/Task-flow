@@ -11,7 +11,8 @@ export const authMiddleware = async (req, res, next) => {
   const token = authHeader.split(" ")[1];
 
   try {
-    const decoded = jwt.verify(token, "secreto_super_seguro"); // usa tu misma clave JWT
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
 
     const [user] = await db.query("SELECT * FROM users WHERE id = ?", [
       decoded.id,

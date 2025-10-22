@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import db from "../config/db.js";
 
 
-const JWT_SECRET = "supersecreto123"; // ⚠️ cámbialo luego y guárdalo en .env
+const JWT_SECRET = "miclavesupersegura"; // ⚠️ cámbialo luego y guárdalo en .env
 
 // ✅ Registro de usuario
 export const registerUser = async (req, res) => {
@@ -57,10 +57,7 @@ export const loginUser = async (req, res) => {
       return res.status(401).json({ message: "Contraseña incorrecta" });
 
     // ✅ Generar token con ID del usuario
-    const token = jwt.sign({ id: user.id }, "miclavesupersegura", {
-      expiresIn: "1h",
-    });
-
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "1d" });
     res.json({
       message: "Inicio de sesión exitoso",
       token,
