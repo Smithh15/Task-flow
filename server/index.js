@@ -14,7 +14,7 @@ console.log("🧩 Cargando rutas...");
 
 app.use("/api/users", userRoutes);
 app.use("/api/tasks", taskRoutes);
-
+console.log("✅ Rutas cargadas: /api/users y /api/tasks");
 app.get("/", (req, res) => {
   res.send("🚀 API funcionando correctamente");
 });
