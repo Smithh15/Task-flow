@@ -57,7 +57,7 @@ export const loginUser = async (req, res) => {
       return res.status(401).json({ message: "Contraseña incorrecta" });
 
     // ✅ Generar token con ID del usuario
-    const token = jwt.sign({ id: user.id }, "secreto_super_seguro", {
+    const token = jwt.sign({ id: user.id }, "miclavesupersegura", {
       expiresIn: "1h",
     });
 
