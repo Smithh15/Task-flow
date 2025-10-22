@@ -1,8 +1,9 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://task-flow-2-62wk.onrender.com",
+  baseURL: "https://task-flow-2-62wk.onrender.com/api",
 });
+
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) {
