@@ -29,13 +29,14 @@ export default function TaskManager() {
   }
 }, []);
 
-
-  // 🔹 Obtener tareas
+//obtener tareas
  const fetchTasks = async () => {
   try {
-    const res = await api.get("/tasks");
+    const res = await api.get("/tasks"); // 
+    console.log("✅ Tareas obtenidas:", res.data);
     setTasks(res.data);
   } catch (error) {
+    console.error("❌ Error al obtener tareas:", error);
     showToast("Error al obtener tareas", "error");
   }
 };
@@ -46,32 +47,16 @@ export default function TaskManager() {
     setTimeout(() => setToast({ message: "", type: "" }), 3000);
   };
 
-    const createTask = async (e) => {
+const createTask = async (e) => {
   e.preventDefault();
   try {
-    const token = localStorage.getItem("token");
-
-    const res = await api.post("/tasks", form, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
+    const res = await api.post("/tasks", form);
     console.log("✅ Tarea creada:", res.data);
+    await fetchTasks(); // 👈 importante: esperar a que termine
     showToast("Tarea creada correctamente", "success");
-    setForm({
-      title: "",
-      description: "",
-      status: "pendiente",
-      priority: "media",
-      start_date: "",
-      due_date: "",
-    });
-    fetchTasks();
   } catch (err) {
-    console.error("❌ Error al crear tarea:", err.response || err);
-    showToast(
-      err.response?.data?.message || "Error al crear tarea (ver consola)",
-      "error"
-    );
+    console.error("❌ Error al crear tarea:", err.response?.data || err.message);
+    showToast("Error al crear tarea", "error");
   }
 };
 
