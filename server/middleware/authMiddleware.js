@@ -1,26 +1,31 @@
-import jwt from "jsonwebtoken";
 import db from "../config/db.js";
 
-export const authMiddleware = async (req, res, next) => {
+export const getTasks = async (req, res) => {
   try {
-    const authHeader = req.headers.authorization;
+    console.log("🟡 Entrando a getTasks...");
+    console.log("➡️ req.user recibido:", req.user);
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ message: "Token no proporcionado" });
+    if (!req.user || !req.user.id) {
+      console.error("❌ req.user está vacío o sin id");
+      return res.status(401).json({ message: "Usuario no autenticado" });
     }
 
-    const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "miclavesupersegura");
+    const userId = req.user.id;
+    console.log("✅ userId:", userId);
 
-    const [user] = await db.query("SELECT * FROM users WHERE id = ?", [decoded.id]);
-    if (user.length === 0) {
-      return res.status(401).json({ message: "Usuario no encontrado" });
-    }
+    // 👇 Esta consulta funciona con mysql2/promise
+    const [tasks] = await db.query(
+      "SELECT * FROM tasks WHERE user_id = ? ORDER BY id DESC",
+      [userId]
+    );
 
-    req.user = user[0];
-    next();
+    console.log(`✅ ${tasks.length} tareas encontradas para user ${userId}`);
+    res.status(200).json(tasks);
   } catch (error) {
-    console.error("❌ Error en authMiddleware:", error);
-    return res.status(401).json({ message: "Token inválido o expirado" });
+    console.error("❌ Error al obtener tareas:", error);
+    res.status(500).json({
+      message: "Error al obtener tareas",
+      error: error.message,
+    });
   }
 };

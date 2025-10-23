@@ -2,24 +2,35 @@ import db from "../config/db.js";
 
 
 // 🔹 Obtener tareas del usuario
+import db from "../config/db.js";
+
 export const getTasks = async (req, res) => {
   try {
-    console.log("🟡 Entrando a getTasks");
-    console.log("req.user:", req.user); // 👈 veremos si el usuario existe
+    console.log("🟡 Entrando a getTasks...");
+    console.log("➡️ req.user recibido:", req.user);
 
-    const userId = req.user?.id;
-    if (!userId) {
-      console.error("❌ No se encontró userId");
+    if (!req.user || !req.user.id) {
+      console.error("❌ req.user está vacío o sin id");
       return res.status(401).json({ message: "Usuario no autenticado" });
     }
 
-    const [tasks] = await db.query("SELECT * FROM tasks WHERE user_id = ?", [userId]);
-    console.log(`✅ Tareas obtenidas para user ${userId}: ${tasks.length}`);
+    const userId = req.user.id;
+    console.log("✅ userId:", userId);
 
-    res.status(200).json(tasks || []);
+    
+    const [tasks] = await db.query(
+      "SELECT * FROM tasks WHERE user_id = ? ORDER BY id DESC",
+      [userId]
+    );
+
+    console.log(`✅ ${tasks.length} tareas encontradas para user ${userId}`);
+    res.status(200).json(tasks);
   } catch (error) {
     console.error("❌ Error al obtener tareas:", error);
-    res.status(500).json({ message: "Error al obtener tareas", error: error.message });
+    res.status(500).json({
+      message: "Error al obtener tareas",
+      error: error.message,
+    });
   }
 };
 
