@@ -7,6 +7,7 @@ import {
   deleteTask,
 } from "../controllers/tasks.controller.js";
 
+
 import { authMiddleware } from "../middleware/authMiddleware.js";
 
 const router = express.Router();

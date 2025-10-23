@@ -1,18 +1,16 @@
 import db from "../config/db.js";
 
-// 🔹 Obtener todas las tareas del usuario autenticado
+
+// 🔹 Obtener tareas del usuario
 export const getTasks = async (req, res) => {
   try {
-    console.log("➡️ Body recibido:", req.body);
-console.log("➡️ Usuario autenticado:", req.user);
+    const userId = req.user.id; // ← viene del middleware
 
-    const [rows] = await db.execute(
-      "SELECT * FROM tasks WHERE user_id = ? ORDER BY created_at DESC",
-      [req.user.id]
-    );
-    res.json(rows);
+    const [tasks] = await db.query("SELECT * FROM tasks WHERE user_id = ?", [userId]);
+    res.json(tasks);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("❌ Error al obtener tareas:", error);
+    res.status(500).json({ message: "Error al obtener tareas", error: error.message });
   }
 };
 
@@ -34,22 +32,18 @@ export const getTaskById = async (req, res) => {
 // 🔹 Crear tarea
 export const createTask = async (req, res) => {
   try {
-    const { title, description, status, priority, start_date, due_date } = req.body;
     const userId = req.user.id;
+    const { title, description, status, priority, start_date, due_date } = req.body;
 
-    if (!title || !start_date || !due_date) {
-      return res.status(400).json({ message: "Faltan campos obligatorios" });
-    }
-
-    await db.query(
+    const [result] = await db.query(
       "INSERT INTO tasks (user_id, title, description, status, priority, start_date, due_date) VALUES (?, ?, ?, ?, ?, ?, ?)",
       [userId, title, description, status, priority, start_date, due_date]
     );
 
-    res.status(201).json({ message: "Tarea creada correctamente" });
+    res.status(201).json({ message: "Tarea creada", taskId: result.insertId });
   } catch (error) {
-    console.error("Error en createTask:", error);
-    res.status(500).json({ message: "Error al crear la tarea" });
+    console.error("❌ Error al crear tarea:", error);
+    res.status(500).json({ message: "Error al crear tarea", error: error.message });
   }
 };
 
