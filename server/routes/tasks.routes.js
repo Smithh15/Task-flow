@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  getTasks,
   getAllTasks,
   getTaskById,
   createTask,
@@ -16,6 +17,7 @@ const router = express.Router();
 router.use(authMiddleware);
 
 // Rutas protegidas
+router.get("/", getTasks);
 router.get("/", getAllTasks);
 router.get("/:id", getTaskById);
 router.post("/", createTask);   // ✅ ahora req.user existe
