@@ -1,6 +1,3 @@
-import db from "../config/db.js";
-
-
 // 🔹 Obtener tareas del usuario
 import db from "../config/db.js";
 
