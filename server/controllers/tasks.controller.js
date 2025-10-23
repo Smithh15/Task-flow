@@ -4,10 +4,19 @@ import db from "../config/db.js";
 // 🔹 Obtener tareas del usuario
 export const getTasks = async (req, res) => {
   try {
-    const userId = req.user.id; // ← viene del middleware
+    console.log("🟡 Entrando a getTasks");
+    console.log("req.user:", req.user); // 👈 veremos si el usuario existe
+
+    const userId = req.user?.id;
+    if (!userId) {
+      console.error("❌ No se encontró userId");
+      return res.status(401).json({ message: "Usuario no autenticado" });
+    }
 
     const [tasks] = await db.query("SELECT * FROM tasks WHERE user_id = ?", [userId]);
-    res.json(tasks);
+    console.log(`✅ Tareas obtenidas para user ${userId}: ${tasks.length}`);
+
+    res.status(200).json(tasks || []);
   } catch (error) {
     console.error("❌ Error al obtener tareas:", error);
     res.status(500).json({ message: "Error al obtener tareas", error: error.message });
