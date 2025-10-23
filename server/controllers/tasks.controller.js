@@ -1,5 +1,5 @@
 import db from "../config/db.js";
-
+import { getTasks, createTask } from "../controllers/tasks.controller.js";
 
 // 🔹 Obtener tareas del usuario
 export const getTasks = async (req, res) => {
@@ -93,4 +93,4 @@ export const getAllTasks = async (req, res) => {
   }
 };
 
-import { getTasks, createTask } from "../controllers/tasks.controller.js";
+
